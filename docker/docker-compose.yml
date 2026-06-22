@@ -1,0 +1,48 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: prepmaster-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - prepmaster-network
+
+  server:
+    build:
+      context: ../server
+      dockerfile: ../docker/Dockerfile.server
+    container_name: prepmaster-server
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongodb:27017/prepmaster-ai
+      - CLIENT_URL=http://localhost:80
+    depends_on:
+      - mongodb
+    networks:
+      - prepmaster-network
+
+  client:
+    build:
+      context: ../client
+      dockerfile: ../docker/Dockerfile.client
+    container_name: prepmaster-client
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    networks:
+      - prepmaster-network
+
+volumes:
+  mongo-data:
+
+networks:
+  prepmaster-network:
+    driver: bridge
