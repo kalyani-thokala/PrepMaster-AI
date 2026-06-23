@@ -67,8 +67,10 @@ import adminRouter from "./routes/admin.routes.js";
 import notificationRouter from "./routes/notification.routes.js";
 import leaderboardRouter from "./routes/leaderboard.routes.js";
 import companyRouter from "./routes/company.routes.js";
+import healthRouter from "./routes/health.routes.js";
 
 // Map API Routes
+app.use("/health", healthRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/resumes", resumeRouter);
 app.use("/api/v1/interviews", interviewRouter);
@@ -90,6 +92,7 @@ const startServer = async () => {
     await connectDB();
     app.listen(PORT, () => {
       logger.info(`Server is running and listening on port: ${PORT}`);
+      console.log(`Server is running on port ${PORT}`);
     });
   } catch (error) {
     logger.error("Failed to start the application server: ", error);
