@@ -68,6 +68,11 @@ import notificationRouter from "./routes/notification.routes.js";
 import leaderboardRouter from "./routes/leaderboard.routes.js";
 import companyRouter from "./routes/company.routes.js";
 import healthRouter from "./routes/health.routes.js";
+import dashboardRouter from "./routes/dashboard.routes.js";
+import aptitudeRouter from "./routes/aptitude.routes.js";
+import codingRouter from "./routes/coding.routes.js";
+import analyticsRouter from "./routes/analytics.routes.js";
+import recommendationsRouter from "./routes/recommendations.routes.js";
 
 // Map API Routes
 app.use("/health", healthRouter);
@@ -82,6 +87,11 @@ app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/notifications", notificationRouter);
 app.use("/api/v1/leaderboard", leaderboardRouter);
 app.use("/api/v1/company", companyRouter);
+app.use("/api/v1/dashboard", dashboardRouter);
+app.use("/api/v1/aptitude", aptitudeRouter);
+app.use("/api/v1/coding", codingRouter);
+app.use("/api/v1/analytics", analyticsRouter);
+app.use("/api/v1/recommendations", recommendationsRouter);
 
 // Global Error Handling Middleware
 app.use(errorHandler);

@@ -342,5 +342,182 @@ export const geminiService = {
         "Conduct a technical mock interview targeting a 'Backend Engineer' role to practice explaining system design concepts."
       ]
     };
+  },
+
+  // 7. Dynamic Aptitude Tests Generator
+  generateAptitudeQuestions: async (topic, difficulty, count, excludeQuestions = []) => {
+    const prompt = `Generate exactly ${count} unique, high-quality multiple-choice questions (MCQs) for the topic/category '${topic}' with a difficulty level of '${difficulty}'.
+    ${excludeQuestions.length > 0 ? `To ensure uniqueness, you MUST NOT generate the following questions or anything very similar to them: ${JSON.stringify(excludeQuestions.slice(0, 20))}. Make sure at least 80% are completely new and distinct.` : ""}
+    Each question must have exactly 4 choices. One choice must be the correct answer. Provide a detailed step-by-step mathematical or logical explanation.
+    Provide the response in the following JSON format:
+    {
+      "questions": [
+        {
+          "question": "The question text here",
+          "options": ["Option A text", "Option B text", "Option C text", "Option D text"],
+          "correctAnswer": "Option A text (must exactly match one of the elements in options array)",
+          "explanation": "Detailed step-by-step explanation why this is correct",
+          "topic": "${topic}",
+          "difficulty": "${difficulty}",
+          "marks": 1
+        }
+      ]
+    }`;
+
+    const system = "You are a professional aptitude placement examiner. Create clear, mathematically and logically sound questions. Always return the output in valid JSON format.";
+    const result = await callGeminiJson(prompt, system);
+    
+    if (result && result.questions && Array.isArray(result.questions) && result.questions.length > 0) {
+      return result.questions;
+    }
+    
+    throw new Error(`Failed to generate aptitude questions via Gemini for ${topic} (${difficulty})`);
+  },
+
+  // 8. Dynamic Coding Challenges Generator
+  generateCodingChallenge: async (topic, difficulty) => {
+    const prompt = `Generate a unique, creative programming challenge on the topic '${topic}' at difficulty level '${difficulty}'.
+    Provide the response in the following JSON format:
+    {
+      "title": "Problem Title",
+      "description": "Clear, markdown-compatible problem description",
+      "inputFormat": "Input specification",
+      "outputFormat": "Output specification",
+      "constraints": "Constraints, e.g. 1 <= N <= 10^5",
+      "examples": [
+        {
+          "input": "Example Input",
+          "output": "Example Output",
+          "explanation": "Brief explanation of the example"
+        }
+      ],
+      "testCases": [
+        {
+          "input": "Sample testcase 1 input",
+          "output": "Sample testcase 1 output",
+          "isSample": true
+        },
+        {
+          "input": "Sample testcase 2 input",
+          "output": "Sample testcase 2 output",
+          "isSample": true
+        }
+      ],
+      "hiddenTestCases": [
+        {
+          "input": "Hidden testcase 1 input",
+          "output": "Hidden testcase 1 output"
+        },
+        {
+          "input": "Hidden testcase 2 input",
+          "output": "Hidden testcase 2 output"
+        },
+        {
+          "input": "Hidden testcase 3 input",
+          "output": "Hidden testcase 3 output"
+        }
+      ],
+      "starterCode": [
+        { "language": "javascript", "code": "function solve(input) {\\n  // Write your code here\\n  return \\"\\";\\n}" },
+        { "language": "python", "code": "def solve(input_str):\\n    # Write your code here\\n    return \\"\\"" },
+        { "language": "java", "code": "import java.util.*;\\n\\npublic class Solution {\\n    public static String solve(String input) {\\n        // Write your code here\\n        return \\"\\";\\n    }\\n}" },
+        { "language": "cpp", "code": "#include <iostream>\\n#include <string>\\nusing namespace std;\\n\\nstring solve(string input) {\\n    // Write your code here\\n    return \\"\\";\\n}" },
+        { "language": "c", "code": "#include <stdio.h>\\n#include <string.h>\\n\\nvoid solve(char* input, char* output) {\\n    // Write your code here\\n}" }
+      ]
+    }`;
+
+    const system = "You are an elite developer recruitment challenge setter. Build a high-quality, solvable coding puzzle. Always return valid JSON.";
+    const result = await callGeminiJson(prompt, system);
+    
+    if (result && result.title && result.description) {
+      return result;
+    }
+    
+    throw new Error(`Failed to generate coding challenge via Gemini for ${topic} (${difficulty})`);
+  },
+
+  // 9. AI Code evaluator
+  evaluateCodeSubmission: async (title, description, language, code, testCasesResults) => {
+    const prompt = `Perform a static analysis and quality review of the candidate's code submission.
+    Challenge Title: '${title}'
+    Description: '${description}'
+    Language: '${language}'
+    Candidate Code:
+    \`\`\`${language}
+    ${code}
+    \`\`\`
+    Execution Test Cases Results:
+    ${JSON.stringify(testCasesResults)}
+
+    Evaluate the following dimensions:
+    - Code Quality and readability
+    - Time Complexity
+    - Space Complexity
+    - Optimization opportunities
+    - Best practices compliance
+    
+    Provide the response in the following JSON format:
+    {
+      "score": 0 to 100 integer (score reflecting correctness + quality),
+      "feedback": "Coaching feedback summary paragraph",
+      "timeComplexity": "Big O notation",
+      "spaceComplexity": "Big O notation",
+      "improvements": ["improvement suggestions 1", "improvement suggestions 2"],
+      "rating": "Excellent" | "Good" | "Average" | "Poor"
+    }`;
+
+    const system = "You are a Senior Principal Software Engineer and Technical Interviewer. Be thorough and constructive. Always return valid JSON.";
+    const result = await callGeminiJson(prompt, system);
+    
+    if (result && result.score !== undefined) {
+      return result;
+    }
+
+    // Heuristic Fallback
+    const allPassed = testCasesResults.allPassed;
+    const ratio = testCasesResults.passedCases / (testCasesResults.totalCases || 1);
+    return {
+      score: allPassed ? 92 : Math.round(ratio * 75),
+      feedback: allPassed
+        ? "Excellent job! The code is clean and passes all test cases."
+        : "Your solution compiles but fails some test cases. Review border cases and index boundaries.",
+      timeComplexity: "O(N)",
+      spaceComplexity: "O(N)",
+      improvements: [
+        "Optimize loops to reduce time complexity.",
+        "Include input checks to handle null or empty arguments."
+      ],
+      rating: allPassed ? "Excellent" : "Average"
+    };
+  },
+
+  // 10. AI Study Recommendations Generator
+  generateRecommendations: async (weakTopics) => {
+    const prompt = `The candidate has weak performance in the following topics: [${weakTopics.join(", ")}].
+    Provide the response in the following JSON format:
+    {
+      "guidance": "Detailed strategic advice explaining how they can reinforce these concepts.",
+      "recommendedTopics": [
+        {
+          "topic": "Topic Name",
+          "description": "Short explanation of what to practice"
+        }
+      ]
+    }`;
+
+    const system = "You are an AI career recommendations planner. Always return valid JSON.";
+    const result = await callGeminiJson(prompt, system);
+    
+    if (result && result.recommendedTopics) {
+      return result;
+    }
+    
+    return {
+      guidance: `Focus on mastering the fundamentals of ${weakTopics.join(", ")}. Take more practice quizzes and review solutions step-by-step.`,
+      recommendedTopics: weakTopics.map((t) => ({
+        topic: t,
+        description: `Practice basic and advanced questions in ${t}.`
+      }))
+    };
   }
 };
