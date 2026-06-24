@@ -10,13 +10,13 @@ import { getFirestore } from "firebase/firestore";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
 const defaultFirebaseConfig = {
-  apiKey: "your_firebase_api_key_placeholder",
-  authDomain: "your_firebase_auth_domain_placeholder",
-  projectId: "your_firebase_project_id_placeholder",
-  storageBucket: "your_firebase_storage_bucket_placeholder",
-  messagingSenderId: "your_firebase_messaging_sender_id_placeholder",
-  appId: "your_firebase_app_id_placeholder",
-  measurementId: "your_firebase_measurement_id_placeholder"
+  apiKey: "AIzaSyCBkV9nS2wE9HujrKLAe4J-aKZupSrVWdg",
+  authDomain: "prepmasterai-b2e06.firebaseapp.com",
+  projectId: "prepmasterai-b2e06",
+  storageBucket: "prepmasterai-b2e06.firebasestorage.app",
+  messagingSenderId: "270131420225",
+  appId: "1:270131420225:web:69148f640e771a41897ac0",
+  measurementId: "G-ZCZZ6YV68Z"
 };
 
 const requiredEnvVars = [
@@ -29,8 +29,10 @@ const requiredEnvVars = [
 ];
 
 function getFirebaseConfig() {
-  const allEnvVarsPresent = requiredEnvVars.every((key) => Boolean(import.meta.env[key]));
-  const someEnvVarsPresent = requiredEnvVars.some((key) => Boolean(import.meta.env[key]));
+  const allEnvVarsPresent = requiredEnvVars.every((key) => {
+    const val = import.meta.env[key];
+    return Boolean(val && !val.includes("placeholder"));
+  });
 
   if (allEnvVarsPresent) {
     return {
@@ -42,13 +44,6 @@ function getFirebaseConfig() {
       appId: import.meta.env.VITE_FIREBASE_APP_ID,
       measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || defaultFirebaseConfig.measurementId
     };
-  }
-
-  if (someEnvVarsPresent) {
-    const missing = requiredEnvVars.filter((key) => !import.meta.env[key]);
-    throw new Error(
-      `Firebase initialization failed because the following environment variables are missing: ${missing.join(", ")}`
-    );
   }
 
   return defaultFirebaseConfig;

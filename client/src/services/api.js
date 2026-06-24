@@ -36,8 +36,14 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Avoid infinite loop if refresh token route itself fails
-    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes("/auth/refresh-token")) {
+    // Avoid infinite loop if refresh token route itself fails, or for public auth routes
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url.includes("/auth/refresh-token") &&
+      !originalRequest.url.includes("/auth/login") &&
+      !originalRequest.url.includes("/auth/register")
+    ) {
       originalRequest._retry = true;
 
       try {

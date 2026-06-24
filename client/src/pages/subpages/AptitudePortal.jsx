@@ -6,6 +6,7 @@ import { FiCheckCircle, FiAlertTriangle, FiAward, FiClock, FiHelpCircle } from "
 const AptitudePortal = () => {
   const [category, setCategory] = useState("Quantitative Aptitude");
   const [difficulty, setDifficulty] = useState("Medium");
+  const [questionCount, setQuestionCount] = useState(10);
   const [assessment, setAssessment] = useState(null);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState([]); // [{ questionIndex, selectedOption }]
@@ -14,7 +15,8 @@ const AptitudePortal = () => {
   const [submitting, setSubmitting] = useState(false);
 
   // Timer state (seconds)
-  const [timeLeft, setTimeLeft] = useState(600); // 10 minutes
+  const [timeLeft, setTimeLeft] = useState(900); // default 15 minutes
+  const [totalDuration, setTotalDuration] = useState(900);
 
   useEffect(() => {
     if (assessment && timeLeft > 0 && !report) {
@@ -29,13 +31,22 @@ const AptitudePortal = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await apiClient.post("/assessments/generate", { category, difficulty });
-      setAssessment(response.data.data);
+      const countNum = Number(questionCount);
+      const response = await apiClient.post("/aptitude/generate", {
+        topic: category,
+        category,
+        difficulty,
+        questionCount: countNum
+      });
+      
+      const testData = response.data.data;
+      setAssessment(testData);
       setAnswers([]);
       setCurrentIdx(0);
       setReport(null);
-      setTimeLeft(600); // 10 minutes
-      toast.success("Assessment loaded successfully!");
+      setTimeLeft(testData.duration || 900);
+      setTotalDuration(testData.duration || 900);
+      toast.success("Aptitude assessment loaded successfully!");
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to start assessment");
     } finally {
@@ -64,9 +75,11 @@ const AptitudePortal = () => {
   const submitAssessment = async () => {
     setSubmitting(true);
     try {
-      const response = await apiClient.post("/assessments/submit", {
-        assessmentId: assessment.assessmentId,
-        userAnswers: answers
+      const durationTaken = totalDuration - timeLeft;
+      const response = await apiClient.post("/aptitude/submit", {
+        aptitudeTestId: assessment.aptitudeTestId,
+        answers: answers,
+        durationTaken
       });
       setReport(response.data.data);
       setAssessment(null);
@@ -109,25 +122,48 @@ const AptitudePortal = () => {
                 <option value="Logical Reasoning">Logical Reasoning</option>
                 <option value="Verbal Ability">Verbal Ability</option>
                 <option value="Data Interpretation">Data Interpretation</option>
-                <option value="Profit & Loss">Profit & Loss</option>
-                <option value="Percentage">Percentage</option>
+                <option value="Probability">Probability</option>
+                <option value="Permutations and Combinations">Permutations & Combinations</option>
                 <option value="Time and Work">Time and Work</option>
-                <option value="Number Series">Number Series</option>
-                <option value="Programming Core">Programming Core Subjects</option>
+                <option value="Time Speed Distance">Time Speed Distance</option>
+                <option value="Profit and Loss">Profit and Loss</option>
+                <option value="Percentages">Percentages</option>
+                <option value="Ratios">Ratios</option>
+                <option value="Number Systems">Number Systems</option>
+                <option value="Simplification">Simplification</option>
+                <option value="Blood Relations">Blood Relations</option>
+                <option value="Coding Decoding">Coding Decoding</option>
+                <option value="Seating Arrangements">Seating Arrangements</option>
+                <option value="Puzzles">Puzzles</option>
               </select>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Difficulty Tier</label>
-              <select
-                value={difficulty}
-                onChange={(e) => setDifficulty(e.target.value)}
-                className="w-full glass-input bg-[#0b0f19]"
-              >
-                <option value="Easy">Easy</option>
-                <option value="Medium">Medium</option>
-                <option value="Hard">Hard</option>
-              </select>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Difficulty Tier</label>
+                <select
+                  value={difficulty}
+                  onChange={(e) => setDifficulty(e.target.value)}
+                  className="w-full glass-input bg-[#0b0f19]"
+                >
+                  <option value="Easy">Easy</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Hard">Hard</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Questions Count</label>
+                <select
+                  value={questionCount}
+                  onChange={(e) => setQuestionCount(e.target.value)}
+                  className="w-full glass-input bg-[#0b0f19]"
+                >
+                  <option value="10">10 Questions (15 Mins)</option>
+                  <option value="15">15 Questions (20 Mins)</option>
+                  <option value="20">20 Questions (30 Mins)</option>
+                </select>
+              </div>
             </div>
 
             <button
@@ -198,7 +234,7 @@ const AptitudePortal = () => {
             </div>
 
             <h3 className="text-base font-bold text-white leading-relaxed">
-              {assessment.questions[currentIdx].questionText}
+              {assessment.questions[currentIdx].question}
             </h3>
 
             {/* Options list */}
@@ -257,38 +293,64 @@ const AptitudePortal = () => {
             
             <div className="mt-6 inline-block bg-[#0b0f19] border border-darkBorder px-8 py-4 rounded-xl">
               <span className="text-4xl font-extrabold text-primary Outfit">{report.score}%</span>
-              <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1.5 font-bold">Overall Rating</p>
+              <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1.5 font-bold">Score</p>
+            </div>
+            
+            <div className="mt-2 text-slate-400 text-xs font-semibold">
+              Accuracy: <span className="text-white">{report.accuracy}%</span>
             </div>
           </div>
 
           {/* SWOT counters */}
           <div className="grid grid-cols-3 gap-4 text-center">
             <div className="bg-[#0b0f19] border border-darkBorder p-4 rounded-xl">
-              <span className="text-xl font-bold text-success">{report.report.correctAnswers}</span>
+              <span className="text-xl font-bold text-success">{report.correctAnswers}</span>
               <p className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold mt-1">Correct</p>
             </div>
             <div className="bg-[#0b0f19] border border-darkBorder p-4 rounded-xl">
-              <span className="text-xl font-bold text-danger">{report.report.wrongAnswers}</span>
+              <span className="text-xl font-bold text-danger">{report.wrongAnswers}</span>
               <p className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold mt-1">Wrong</p>
             </div>
             <div className="bg-[#0b0f19] border border-darkBorder p-4 rounded-xl">
-              <span className="text-xl font-bold text-slate-400">{report.report.skippedAnswers}</span>
+              <span className="text-xl font-bold text-slate-400">{report.skippedAnswers}</span>
               <p className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold mt-1">Skipped</p>
             </div>
           </div>
 
           {/* TOPIC BREAKDOWNS */}
-          <div className="bg-[#0b0f19]/30 p-5 border border-darkBorder rounded-xl space-y-3">
-            <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-2 flex items-center gap-1.5">
-              <FiAward className="text-primary" /> Topic Performance Breakdown
-            </h4>
-            {report.report.topicBreakdown.map((t, idx) => (
-              <div key={idx} className="flex justify-between items-center text-xs border-b border-darkBorder/30 pb-2 last:border-b-0">
-                <span className="text-slate-300">{t.topic}</span>
-                <span className="font-semibold text-primary">{t.correct}/{t.total} Correct</span>
-              </div>
-            ))}
-          </div>
+          {report.topicBreakdown && report.topicBreakdown.length > 0 && (
+            <div className="bg-[#0b0f19]/30 p-5 border border-darkBorder rounded-xl space-y-3">
+              <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                <FiAward className="text-primary" /> Topic Performance Breakdown
+              </h4>
+              {report.topicBreakdown.map((t, idx) => (
+                <div key={idx} className="flex justify-between items-center text-xs border-b border-darkBorder/30 pb-2 last:border-b-0">
+                  <span className="text-slate-300">{t.topic}</span>
+                  <span className="font-semibold text-primary">{t.correct}/{t.total} Correct</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* WEAK AREAS & AI RECOMMENDATIONS */}
+          {report.weakAreas && report.weakAreas.length > 0 && (
+            <div className="bg-[#0b0f19]/60 border border-darkBorder p-5 rounded-xl space-y-2 text-xs">
+              <h4 className="font-bold text-white uppercase tracking-wider text-xs text-amber-500">Weak Areas Identified</h4>
+              <p className="text-slate-300 leading-relaxed font-sans">
+                You struggled in: <span className="font-bold text-white">{report.weakAreas.join(", ")}</span>
+              </p>
+              {report.improvementSuggestions && report.improvementSuggestions.length > 0 && (
+                <div className="mt-3">
+                  <p className="font-semibold text-primary uppercase tracking-widest text-[9px] mb-1">Recommended Action Steps</p>
+                  <ul className="list-disc list-inside space-y-1 text-slate-400">
+                    {report.improvementSuggestions.map((s, idx) => (
+                      <li key={idx}>{s}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* EXPLANATIONS */}
           <div className="space-y-4">
@@ -305,9 +367,9 @@ const AptitudePortal = () => {
                       {isCorrect ? "Correct" : hasAnswered ? "Wrong" : "Skipped"}
                     </span>
                   </div>
-                  <p className="text-xs font-bold text-white">Q: {q.questionText}</p>
+                  <p className="text-xs font-bold text-white">Q: {q.question}</p>
                   <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                    Correct Option: <span className="text-success font-semibold">{q.correctOption}</span>
+                    Correct Option: <span className="text-success font-semibold">{q.correctAnswer}</span>
                   </p>
                   {userAns?.selectedOption && !isCorrect && (
                     <p className="text-xs text-slate-400 leading-relaxed font-sans">

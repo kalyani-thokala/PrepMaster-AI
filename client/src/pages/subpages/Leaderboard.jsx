@@ -92,7 +92,8 @@ const Leaderboard = () => {
                     <tr className="text-slate-500 border-b border-darkBorder uppercase font-bold tracking-wider">
                       <th className="pb-3 text-center w-12">Rank</th>
                       <th className="pb-3 pl-4">Candidate Name</th>
-                      <th className="pb-3 text-center">Readiness Index</th>
+                      <th className="pb-3 text-center">Score</th>
+                      <th className="pb-3 text-center">Tests Completed</th>
                       <th className="pb-3 text-center">Streak</th>
                     </tr>
                   </thead>
@@ -126,6 +127,7 @@ const Leaderboard = () => {
                             </div>
                           </td>
                           <td className="py-4 text-center font-bold font-sans">{u.readinessScore}%</td>
+                          <td className="py-4 text-center font-bold font-sans">{u.testsCompleted || 0}</td>
                           <td className="py-4 text-center font-bold font-sans flex items-center justify-center gap-1">
                             <FiZap className="text-amber-500" size={13} /> {u.streak}
                           </td>

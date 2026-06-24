@@ -2,11 +2,18 @@ import React, { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import apiClient from "../services/api.js";
+import toast from "react-hot-toast";
 
 export const ProtectedRoute = () => {
   const { user, authLoading } = useAuth();
   const [syncLoading, setSyncLoading] = useState(true);
   const [syncError, setSyncError] = useState(null);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      toast.error("Please login to continue");
+    }
+  }, [user, authLoading]);
 
   useEffect(() => {
     const syncSessionWithBackend = async () => {
@@ -35,7 +42,7 @@ export const ProtectedRoute = () => {
 
           try {
             // 2. Try logging in
-            const loginRes = await apiClient.post("/auth/login", credentials);
+            const loginRes = await apiClient.post("/auth/login", credentials, { skipAuthRefresh: true });
             const { accessToken } = loginRes.data.data;
             localStorage.setItem("prepmaster-access-token", accessToken);
             console.log("Step 4: Token stored");
@@ -52,10 +59,10 @@ export const ProtectedRoute = () => {
                   email: user.email,
                   password: credentials.password,
                   confirmPassword: credentials.password
-                });
+                }, { skipAuthRefresh: true });
 
                 // Login again after registration
-                const retryRes = await apiClient.post("/auth/login", credentials);
+                const retryRes = await apiClient.post("/auth/login", credentials, { skipAuthRefresh: true });
                 const { accessToken } = retryRes.data.data;
                 localStorage.setItem("prepmaster-access-token", accessToken);
                 console.log("Step 4: Token stored");
